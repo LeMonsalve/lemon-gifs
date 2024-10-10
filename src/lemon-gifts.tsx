@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { AddCategory } from '@/features/categories/components'
 import { toast } from 'sonner'
 import { GifsGrid } from '@/features/gifs/components'
-import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, PartyPopperIcon, SparklesIcon } from 'lucide-react'
 import {
   CategoryNavigationButton
 } from '@/features/categories/components/buttons/category-navigation-button.tsx'
@@ -10,19 +10,17 @@ import { toCategoryCase } from '@/features/categories/utils.ts'
 import {
   SearchCategoryNavigationButton
 } from '@/features/categories/components/buttons/search-category-navigation-button.tsx'
+import { useCategoriesNavigation } from '@/features/categories/hooks'
+import { ModeToggle } from './features/themes/components/buttons/mode-toggle'
 
 export function LeMonGifts() {
   const [categories, setCategories] = useState<string[]>([])
-
-  const [upCategoryIndex, setUpCategoryIndex] = useState<number>(0)
-  const [downCategoryIndex, setDownCategoryIndex] = useState<number>(categories.length - 1)
-
-  useEffect(() => {
-    if (categories.length < 2) return
-
-    setUpCategoryIndex(0)
-    setDownCategoryIndex(1)
-  }, [categories])
+  const {
+    downCategoryIndex,
+    upCategoryIndex,
+    nextCategory,
+    resetCategoriesIndexes,
+  } = useCategoriesNavigation({ categories })
 
   const onNewCategory = useCallback((category: string) => {
     if (categories.includes(category)){
@@ -32,20 +30,6 @@ export function LeMonGifts() {
 
     setCategories([category, ...categories])
   }, [categories])
-
-  const nextCategory = useCallback((type: 'up' | 'down') => {
-    if (type === 'up') {
-      if (upCategoryIndex === 0) return
-
-      setUpCategoryIndex(upCategoryIndex - 1)
-      setDownCategoryIndex(downCategoryIndex - 1)
-    } else {
-      if (downCategoryIndex === categories.length - 1) return
-
-      setUpCategoryIndex(upCategoryIndex + 1)
-      setDownCategoryIndex(downCategoryIndex + 1)
-    }
-  }, [categories.length, downCategoryIndex, upCategoryIndex])
 
   return (
     <main className="flex flex-col items-center h-screen px-4 md:px-0">
@@ -59,13 +43,27 @@ export function LeMonGifts() {
         {categories.map((category) => (
             <GifsGrid category={category} key={category} />
         ))}
+        {
+          categories.length === 0 && (
+                <div className="flex flex-col gap-4 items-center justify-center">
+                  <div className="flex flex-col items-center text-white bg-black dark:text-black dark:bg-white px-8 py-6 rounded-full">
+                    <p className="text-2xl font-bold text-center flex gap-2 items-center justify-center">
+                      <PartyPopperIcon/>
+                      No categories yet, start up
+                      <SparklesIcon/>
+                    </p>
+                  </div>
+                  <ModeToggle align="center" />
+                </div>
+            )
+        }
       </section>
 
       {
-        categories.length > 2 && (
-          <section className="fixed flex flex-col gap-2 right-4 bottom-4">
-            <SearchCategoryNavigationButton />
-            <CategoryNavigationButton icon={ArrowUpIcon} category={toCategoryCase(categories[upCategoryIndex])} onClick={() => nextCategory('up')}/>
+          categories.length > 2 && (
+              <section className="fixed flex flex-col gap-2 right-4 bottom-4">
+                <SearchCategoryNavigationButton onClick={resetCategoriesIndexes}/>
+                <CategoryNavigationButton icon={ArrowUpIcon} category={toCategoryCase(categories[upCategoryIndex])} onClick={() => nextCategory('up')}/>
             <CategoryNavigationButton icon={ArrowDownIcon} category={toCategoryCase(categories[downCategoryIndex])} onClick={() => nextCategory('down')}/>
           </section>
         )
